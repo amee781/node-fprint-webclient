@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <title>WEB figerprint</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+  <script>
+    $(document).ready(function () {
+      var text = "";
+      $(".getbf").click(function () {
+        $.getJSON('http://172.16.154.117:4444/api/user', function (data) {
+          $.each(data.message, function (i) {
+
+            text += 'ID : ' + data.message[i].id + '<br> NAME :' + data.message[i].data.name + '<br> <br>';
+
+          });
+          $(".getf").html(text);
+        });
+      });
+    });
+  </script>
+  <style>
+    body {
+      margin-top: 30px;
+    }
+
+    .card-block {
+      margin-top: 10px;
+      margin-left: 20px;
+      margin-right: 20px;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-6">
+        <form action="http://172.16.154.117:4444/api/user" method="post" id="formadd">
+          <div class="form-group">
+            <label for="name">Name:</label>
+            <input class="form-control" type="text" name="name" id="name">
+          </div>
+          <button class="btn btn-info" type="submit">Add figerprint</button>
+        </form>
+        <br>
+        <button class="getbf btn btn-info" type="button" name="button">GET user</button>
+        <div class="getf"></div>
+      </div>
+      <div class="col-sm-6">
+        <div id="chat">
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script> 
+    $("#formadd").submit(function (event) { //submit form without reloading use jquery/AJAX  write 61/07/08 Time 00.00
+      event.preventDefault(); //prevent default action 
+      var post_url = $(this).attr("action"); //get form action url
+      var request_method = $(this).attr("method"); //get form GET/POST method
+      var form_data = $(this).serialize(); //Encode form elements for submission
+
+      $.ajax({
+        url: post_url,
+        type: request_method,
+        data: form_data
+      });
+    });
+  </script> 
+  
+  <script> //ทำ Socket io ในการรับค่าสถานะการทำงาน
+    $(function () {
+      var socket = io.connect('http://172.16.154.117:4444');
+      
+      socket.on('connect', function () {
+        console.log('[on connect]');
+        //$(".state").html('[on connect]' + ' <br> ');
+        $('#chat').prepend('<div class="card">' +
+          '<div class="card-header" id="info-state">' + '[on connect]' + '</div>' +
+          '<div class="card-block">' + '[on connect]' + '</div>' +
+          '</div>' + '<br>');
+      })
+      socket.on('disconnect', function () {
+        console.log('[on disconnect]');
+        //$(".state").html('[on disconnect]' + ' <br> ');
+        $('#chat').prepend('<div class="card">' +
+          '<div class="card-header" id="info-state">' + '[on disconnect]' + '</div>' +
+          '<div class="card-block">' + '[on disconnect]' + '</div>' +
+          '</div>' + '<br>');
+
+      })
+      socket.on('identify', function (userId, userData) {
+        console.log('[on identify]', 'userId:', userId, 'userData:', userData);
+        //$(".state").html('[on identify] userId:' + userId + 'userData:' + userData + ' <br> ');
+        $('#chat').prepend('<div class="card">' +
+          '<div class="card-header" id="info-state">' + '[on identify]' + '</div>' +
+          '<div class="card-block">' + 'userId: ' + userId + '<br>' + 'userData: ' + userData.name + '</div>' +
+          '</div>' + '<br>');
+      })
+      socket.on('user-add', function (userId, userData) {
+        console.log('[on user-add]', 'userId:', userId, 'userData:', userData);
+        //$(".state").html('[on user-add] userId:' + userId + 'userData:' + userData.name + ' <br> ');
+        $('#chat').prepend('<div class="card">' +
+          '<div class="card-header" id="info-state">' + '[on user-add]' + '</div>' +
+          '<div class="card-block">' + 'userId: ' + userId + '<br>' + 'userData: ' + userData.name + '</div>' +
+          '</div>' + '<br>');
+      })
+      socket.on('user-update', function (userId, userData) {
+        console.log('[on user-update]', 'userId:', userId, 'userData:', userData);
+        //$(".state").html('[on user-update] userId:' + userId + 'userData:' + userData + ' <br> ');
+        $('#chat').prepend('<div class="card">' +
+          '<div class="card-header" id="info-state">' + '[on user-update]' + '</div>' +
+          '<div class="card-block">' + 'userId: ' + userId + '<br>' + 'userData: ' + userData.name + '</div>' +
+          '</div>' + '<br>');
+      })
+      socket.on('user-delete', function (userId) {
+        console.log('[on user-delete]', 'userId:', userId);
+        //$(".state").html('[on user-delete] userId:' + userId + ' <br> ');
+        $('#chat').prepend('<div class="card">' +
+          '<div class="card-header" id="info-state">' + '[on user-update]' + '</div>' +
+          '<div class="card-block">' + 'userId: ' + userId +
+          '</div>' + '<br>');
+      })
+      socket.on('state-enroll', function () {//send state enroll write 61/07/08 Time 00.35
+        console.log('[on state-enroll]', 'state:', 'Recording Figerprint', 'message:', 'สแกน 5 รอบ');
+        //$(".state").html('[on user-delete] userId:' + userId + ' <br> ');
+        $('#chat').prepend('<div class="card">' +
+          '<div class="card-header" id="info-state">' + '[on state-enroll]' + '</div>' +
+          '<div class="card-block">' + 'state: ' + 'Recording Figerprint' + '<br>' + 'message: ' + 'สแกน 5 รอบ' + '</div>' +
+          '</div>' + '<br>');
+      })
+      socket.on('start-add', function () {//send state enroll write 61/07/08 Time 00.35
+        console.log('[on start-add]', 'state:', 'Start Record Figerprint', 'message:', 'วางนิ้วมือบนเครื่องสแกน');
+        //$(".state").html('[on user-delete] userId:' + userId + ' <br> ');
+        $('#chat').prepend('<div class="card">' +
+          '<div class="card-header" id="info-state">' + '[start-add]' + '</div>' +
+          '<div class="card-block">' + 'state: ' + 'Start Record Figerprint' + '<br>' + 'message: ' + 'วางนิ้วมือบนเครื่องสแกน' + '</div>' +
+          '</div>' + '<br>');
+      })
+    });
+
+
+  </script>
+</body>
+
+</html>
